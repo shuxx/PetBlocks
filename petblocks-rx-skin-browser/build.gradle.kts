@@ -16,6 +16,7 @@ tasks {
 
 dependencies {
     implementation(project(":petblocks-api"))
+    implementation(project(":petblocks-core"))
 
     compileOnly("com.google.inject:guice:4.1.0")
     compileOnly("org.yaml:snakeyaml:1.24")

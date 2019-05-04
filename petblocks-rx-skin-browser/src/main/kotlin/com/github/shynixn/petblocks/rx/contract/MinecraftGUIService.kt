@@ -5,6 +5,11 @@ import org.bukkit.entity.Player
 
 interface MinecraftGUIService {
     /**
+     * Opens the gui for the given [player]. Does nothing if the gui is already open.
+     */
+    fun openGui(player: Player)
+
+    /**
      * Changes the header of the gui of the [player] to the given [message].
      */
     fun setHeader(player: Player, message: String)

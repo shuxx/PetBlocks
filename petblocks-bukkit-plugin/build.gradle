@@ -8,7 +8,7 @@ shadowJar{
     archiveName = "$baseName-$version.$extension"
 
     // Change the output folder of the plugin.
-    // destinationDir = new File('D:/Temp/plugins')
+    // destinationDir = new File('D:\\Benutzer\\Temp\\plugins')
 
     relocate 'kotlin', 'com.github.shynixn.petblocks.lib.kotlin'
     relocate 'org.intellij', 'com.github.shynixn.petblocks.lib.org.intellij'
@@ -62,6 +62,8 @@ dependencies {
     implementation project(':petblocks-bukkit-plugin:petblocks-bukkit-nms-111R1')
     implementation project(':petblocks-bukkit-plugin:petblocks-bukkit-nms-112R1')
     implementation project(':petblocks-bukkit-plugin:petblocks-bukkit-nms-113R1')
+
+    implementation project(':petblocks-rx-skin-browser')
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.25'
     implementation 'com.google.inject:guice:4.1.0'

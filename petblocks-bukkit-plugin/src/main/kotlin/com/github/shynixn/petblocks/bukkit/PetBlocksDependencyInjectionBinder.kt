@@ -17,6 +17,10 @@ import com.github.shynixn.petblocks.core.logic.business.commandexecutor.ReloadCo
 import com.github.shynixn.petblocks.core.logic.business.service.*
 import com.github.shynixn.petblocks.core.logic.persistence.context.SqlDbContextImpl
 import com.github.shynixn.petblocks.core.logic.persistence.repository.PetMetaSqlRepository
+import com.github.shynixn.petblocks.rx.contract.BrowserService
+import com.github.shynixn.petblocks.rx.contract.MinecraftGUIService
+import com.github.shynixn.petblocks.rx.service.BrowserServiceImpl
+import com.github.shynixn.petblocks.rx.service.MinecraftGUIServiceImpl
 import com.google.inject.AbstractModule
 import com.google.inject.Scopes
 import org.bukkit.plugin.Plugin
@@ -108,6 +112,10 @@ class PetBlocksDependencyInjectionBinder(private val plugin: Plugin) : AbstractM
         bind(ConfigurationService::class.java).to(ConfigurationServiceImpl::class.java).`in`(Scopes.SINGLETON)
         bind(DependencyHeadDatabaseService::class.java).to(DependencyHeadDatabaseServiceImpl::class.java).`in`(Scopes.SINGLETON)
         bind(DependencyService::class.java).to(DependencyServiceImpl::class.java).`in`(Scopes.SINGLETON)
+
+        // Rx Addon
+        bind(BrowserService::class.java).to(BrowserServiceImpl::class.java).`in`(Scopes.SINGLETON)
+        bind(MinecraftGUIService::class.java).to(MinecraftGUIServiceImpl::class.java).`in`(Scopes.SINGLETON)
 
         when {
             version.isVersionSameOrGreaterThan(Version.VERSION_1_13_R2) -> bind(EntityRegistrationService::class.java).to(EntityRegistration113R2ServiceImpl::class.java).`in`(Scopes.SINGLETON)

@@ -15,6 +15,7 @@ import com.github.shynixn.petblocks.bukkit.logic.business.listener.*
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.EditPetCommandExecutorImpl
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.PlayerPetActionCommandExecutorImpl
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.ReloadCommandExecutorImpl
+import com.github.shynixn.petblocks.rx.executor.GUICommandExecutor
 import com.google.inject.Guice
 import com.google.inject.Injector
 import org.apache.commons.io.IOUtils
@@ -155,6 +156,8 @@ class PetBlocksPlugin : JavaPlugin(), PluginProxy {
         )
         commandService.registerCommandExecutor("petblocks", this.resolve(EditPetCommandExecutorImpl::class.java))
         commandService.registerCommandExecutor("petblockreload", this.resolve(ReloadCommandExecutorImpl::class.java))
+        commandService.registerCommandExecutor(mapOf("command" to "petskinrx", "useage" to "/<command>", "description" to "Opens the petskin browser.",
+            "permission" to "petblocks.admin", "permission-message" to "You don't have permission"), this.resolve(GUICommandExecutor::class.java))
 
         if (config.getBoolean("metrics")) {
             val metrics = Metrics(this)
