@@ -27,6 +27,8 @@ class MinecraftGUIServiceImpl @Inject constructor(private val itemService: ItemS
             return
         }
 
+        println("OPEN GUI")
+
         player.openInventory(Bukkit.getServer().createInventory(player, 54, "Booting..."))
 
         for (i in 0 until 54) {
@@ -56,6 +58,8 @@ class MinecraftGUIServiceImpl @Inject constructor(private val itemService: ItemS
      * Changes the header of the gui of the [player] to the given [message].
      */
     override fun setHeader(player: Player, message: String) {
+        openGui(player)
+
         val targetMessage = ChatMessage(ChatColor.translateChatColorCodes('&', message))
         val nmsPlayer = (player as CraftPlayer).handle
 
