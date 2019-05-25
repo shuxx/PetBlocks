@@ -123,29 +123,27 @@ class BrowserServiceImpl @Inject constructor(private val loggingService: Logging
                             val detailPageUrl = hostname + child.children()[0].attr("href")
                             val detailDocument = Jsoup.connect(detailPageUrl).get()
 
-                            if (detailPageUrl.contains("player-heads")) {
-                                val skinUrl = detailDocument.getElementById("ACC-Name").html()
-                                val skin = Skin(397, 3, skinUrl)
+                            val skinUrl = if (detailPageUrl.contains("player-heads")) {
+                                detailDocument.getElementById("ACC-Name").html()
 
-                                emitter.onNext(Pair(counter, skin))
-                                counter++
+                            } else {
+                                detailDocument.getElementById("UUID-Value").html()
                             }
 
-                            if (detailPageUrl.contains("custom-heads")) {
-                                val skinUrl = detailDocument.getElementById("UUID-Value").html()
-                                val skin = Skin(397, 3, skinUrl)
+                            val skin = Skin(397, 3, skinUrl)
 
-                                emitter.onNext(Pair(counter, skin))
-                                counter++
-                            }
+                            // Push the next skin to the GUI.
+                            emitter.onNext(Pair(counter, skin))
+
+                            counter++
                         }
                     }
                 }
 
             emitter.onComplete()
-        }.cache() // Cache the results.
+        }.cache() // Cache the results of the observable.
 
-        return pageObservables.get(url)!!
+        return pageObservables[url]!!
     }
 
     /**
