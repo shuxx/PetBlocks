@@ -15,7 +15,9 @@ import com.github.shynixn.petblocks.bukkit.logic.business.listener.*
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.EditPetCommandExecutorImpl
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.PlayerPetActionCommandExecutorImpl
 import com.github.shynixn.petblocks.core.logic.business.commandexecutor.ReloadCommandExecutorImpl
+import com.github.shynixn.petblocks.rx.contract.BrowserService
 import com.github.shynixn.petblocks.rx.executor.GUICommandExecutor
+import com.github.shynixn.petblocks.rx.listener.GUIListener
 import com.google.inject.Guice
 import com.google.inject.Injector
 import org.apache.commons.io.IOUtils
@@ -140,6 +142,7 @@ class PetBlocksPlugin : JavaPlugin(), PluginProxy {
         Bukkit.getPluginManager().registerEvents(resolve(FeedingPetListener::class.java), this)
         Bukkit.getPluginManager().registerEvents(resolve(InventoryListener::class.java), this)
         Bukkit.getPluginManager().registerEvents(resolve(PetListener::class.java), this)
+        Bukkit.getPluginManager().registerEvents(resolve(GUIListener::class.java), this)
 
         if (getServerVersion().isVersionSameOrGreaterThan(Version.VERSION_1_9_R2)) {
             Bukkit.getPluginManager().registerEvents(resolve(CarryPet19R2Listener::class.java), this)
@@ -193,6 +196,7 @@ class PetBlocksPlugin : JavaPlugin(), PluginProxy {
 
         for (world in Bukkit.getWorlds()) {
             for (player in world.players) {
+                resolve<BrowserService>(BrowserService::class.java).clearActions(player)
                 resolve<PetDebugService>(PetDebugService::class.java).unRegister(player)
                 resolve<DependencyHeadDatabaseService>(DependencyHeadDatabaseService::class.java).clearResources(player)
                 resolve<GUIService>(GUIService::class.java).cleanResources(player)

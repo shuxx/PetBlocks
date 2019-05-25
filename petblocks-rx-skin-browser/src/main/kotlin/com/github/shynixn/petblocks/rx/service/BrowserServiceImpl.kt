@@ -4,29 +4,34 @@ import com.github.shynixn.petblocks.api.business.service.LoggingService
 import com.github.shynixn.petblocks.rx.contract.BrowserService
 import com.github.shynixn.petblocks.rx.contract.MinecraftGUIService
 import com.github.shynixn.petblocks.rx.entity.Skin
+import com.github.shynixn.petblocks.rx.entity.SkinPage
 import com.github.shynixn.petblocks.rx.extension.AsyncMinecraftThread
 import com.github.shynixn.petblocks.rx.extension.UIMinecraftThread
 import com.google.inject.Inject
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
-import org.bukkit.ChatColor
 import org.bukkit.entity.Player
 import org.jsoup.Jsoup
 import java.util.concurrent.TimeUnit
-import kotlin.math.log
 
+/**
+ * The BrowserServiceImpl handles WebRequests to the https://minecraft-heads.com website in order
+ * to display skins in a gui.
+ */
 class BrowserServiceImpl @Inject constructor(private val loggingService: LoggingService, private val minecraftGUIService: MinecraftGUIService) : BrowserService {
     private val hostname = "https://minecraft-heads.com"
+
+    private val actions = HashMap<Player, ArrayList<Disposable>>()
+    private var pageObservables = HashMap<String, Observable<Pair<Int, Skin>>>()
 
     /**
      * Opens the start page of the browser.
      */
     override fun openMainPage(player: Player) {
+        clearActions(player)
+
         val animatedMessage = displayAnimatedLoadingMessage(player)
-
         val observable = Observable.fromCallable {
-            Thread.sleep(2000)
-
             val document = Jsoup.connect(hostname).get()
 
             document.body().allElements.filter { e ->
@@ -34,41 +39,124 @@ class BrowserServiceImpl @Inject constructor(private val loggingService: Logging
                         && e.child(0).tagName() == "span"
             }.filter { e -> e.attr("href") == "/custom-heads" || e.attr("href") == "/player-heads" }
                 .map { e ->
-                    val skin = Skin(397, 3, hostname + e.attr("href"), e.child(0).child(0).attr("src"), e.child(0).childNode(2).toString().trim())
+                    val skin = Skin(397, 3, e.child(0).child(0).attr("src"), e.child(0).childNode(2).toString().trim())
                     skin.lore.add("Change page")
                     skin
                 }
         }
 
-        observable.subscribeOn(AsyncMinecraftThread.toScheduler())
+        actions[player]!!.add(observable.subscribeOn(AsyncMinecraftThread.toScheduler())
             .observeOn(UIMinecraftThread.toScheduler())
             .retry(5)
             .subscribe({ skins ->
-                animatedMessage.dispose()
-
                 skins[1].skinUrl =
                     "http://textures.minecraft.net/texture/d5c6dc2bbf51c36cfc7714585a6a5683ef2b14d47d8ff714654a893f5da622"
 
                 minecraftGUIService.setItem(player, 21, skins[0])
                 minecraftGUIService.setItem(player, 23, skins[1])
-
-                minecraftGUIService.setHeader(player, "Finished")
             }, { error ->
-                loggingService.error("Failed to retrieve elemetns", error)
+                animatedMessage.dispose()
+                minecraftGUIService.setHeader(player, "Failed to connect.")
+                loggingService.error("Failed to retrieve elements.", error)
             }, {
-                println("COMPLETED.")
-            })
+                animatedMessage.dispose()
+                minecraftGUIService.setHeader(player, "Finished")
+            }))
+    }
+
+    /**
+     * Opens the list of the given [skinPage].
+     */
+    override fun openListPage(player: Player, skinPage: SkinPage) {
+        clearActions(player)
+
+        minecraftGUIService.clearGui(player)
+
+        val url = hostname + "/" + skinPage.category
+        val animatedMessage = displayAnimatedLoadingMessage(player)
+        val observable = getListObservable(url)
+
+        actions[player]!!.add(observable.subscribeOn(AsyncMinecraftThread.toScheduler())
+            .observeOn(UIMinecraftThread.toScheduler())
+            .retry(5)
+            .subscribe({ result ->
+                minecraftGUIService.setItem(player, result.first, result.second)
+            }, { error ->
+                animatedMessage.dispose()
+                minecraftGUIService.setHeader(player, "Failed to retrieve elements.")
+                loggingService.error("Failed to retrieve elements.", error)
+            }, {
+                animatedMessage.dispose()
+                minecraftGUIService.setHeader(player, "Finished")
+            }))
+    }
+
+    /**
+     * Clears all actions the player has requested.
+     */
+    override fun clearActions(player: Player) {
+        if (!actions.containsKey(player)) {
+            actions[player] = ArrayList()
+        }
+
+        for (action in actions[player]!!) {
+            action.dispose()
+        }
+    }
+
+    /**
+     * Gets the observable to load the skin list.
+     */
+    private fun getListObservable(url: String): Observable<Pair<Int, Skin>> {
+        if (this.pageObservables.containsKey(url)) {
+            return pageObservables[url]!!
+        }
+
+        pageObservables[url] = Observable.create<Pair<Int, Skin>> { emitter ->
+            val document = Jsoup.connect(url).get()
+
+            document.body().allElements.filter { e -> e.attr("class") == "itemList" }
+                .forEach { e ->
+                    var counter = 0
+                    e.children().forEach { child ->
+                        if (counter < 54) {
+                            val detailPageUrl = hostname + child.children()[0].attr("href")
+                            val detailDocument = Jsoup.connect(detailPageUrl).get()
+
+                            if (detailPageUrl.contains("player-heads")) {
+                                val skinUrl = detailDocument.getElementById("ACC-Name").html()
+                                val skin = Skin(397, 3, skinUrl)
+
+                                emitter.onNext(Pair(counter, skin))
+                                counter++
+                            }
+
+                            if (detailPageUrl.contains("custom-heads")) {
+                                val skinUrl = detailDocument.getElementById("UUID-Value").html()
+                                val skin = Skin(397, 3, skinUrl)
+
+                                emitter.onNext(Pair(counter, skin))
+                                counter++
+                            }
+                        }
+                    }
+                }
+
+            emitter.onComplete()
+        }.cache() // Cache the results.
+
+        return pageObservables.get(url)!!
     }
 
     /**
      * Displays a moving header text in the browser window of the [player].
-     * @return A disposeable message.
+     * @return A disposable message.
      */
     private fun displayAnimatedLoadingMessage(player: Player): Disposable {
         var counter = 0
         var progressBarGoingRight = true
 
-        return Observable.fromCallable {
+        val disposable = Observable.fromCallable {
             val messageBuilder = StringBuilder()
 
             for (i in 0 until counter) {
@@ -89,5 +177,9 @@ class BrowserServiceImpl @Inject constructor(private val loggingService: Logging
                 progressBarGoingRight = !progressBarGoingRight
             }
         }.delay(10, TimeUnit.MILLISECONDS).subscribeOn(AsyncMinecraftThread.toScheduler()).repeat().subscribe()
+
+        actions[player]!!.add(disposable)
+
+        return disposable
     }
 }
