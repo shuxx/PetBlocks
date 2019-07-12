@@ -150,7 +150,7 @@ class PersistenceMySQLIT {
         val petMeta = classUnderTest.getPetMetaFromPlayer(player)
 
         petMeta.enabled = true
-        petMeta.displayName = "Captain Pet"
+        petMeta.displayName = "This should be a very long displayname in order to test if very long names can also be stored"
         petMeta.soundEnabled = false
         petMeta.particleEnabled = false
         petMeta.skin.typeName = "DIRT"
@@ -184,7 +184,7 @@ class PersistenceMySQLIT {
         Assertions.assertEquals(0, initialSize)
         Assertions.assertEquals(1, actual.id)
         Assertions.assertEquals(true, actual.enabled)
-        Assertions.assertEquals("Captain Pet", actual.displayName)
+        Assertions.assertEquals("This should be a very long displayname in order to test if very long names can also be stored", actual.displayName)
         Assertions.assertEquals(false, actual.soundEnabled)
         Assertions.assertEquals(false, actual.particleEnabled)
         Assertions.assertEquals(1, actual.skin.id)
