@@ -90,6 +90,8 @@ class SqlDbContextImpl @Inject constructor(
             .append(" ")
             .append(rowSelection)
 
+        loggingService.info("DELETE Statement: '$statement'")
+
         val preparedStatement = connection.prepareStatement(statement.toString())
 
         preparedStatement.use {
@@ -123,6 +125,8 @@ class SqlDbContextImpl @Inject constructor(
         }
 
         statement.append(" ").append(rowSelection)
+
+        loggingService.info("Update Statement: '$statement'")
 
         val preparedStatement = connection.prepareStatement(statement.toString())
 
@@ -167,6 +171,8 @@ class SqlDbContextImpl @Inject constructor(
         }
 
         statement.append(")")
+
+        loggingService.info("Insert Statement: '$statement'")
 
         val preparedStatement = connection.prepareStatement(statement.toString(), Statement.RETURN_GENERATED_KEYS)
 
